@@ -12,11 +12,14 @@ COMMENTS = {
 }
 
 
-def to_toml(cfg: dict) -> str:
+def to_toml(cfg: dict, order: dict) -> str:
     out = []
     for section in ("seal", "gyu", "react"):
         out.append(f"[{section}]")
-        for key, value in cfg[section].items():
+        known = list(order.get(section, {}))
+        keys = [k for k in known if k in cfg[section]] + [k for k in cfg[section] if k not in known]
+        for key in keys:
+            value = cfg[section][key]
             if (section, key) in COMMENTS:
                 out.append(COMMENTS[(section, key)])
             if section == "seal" and key == "sticker_ids":
@@ -39,4 +42,5 @@ if __name__ == "__main__":
     else:
         cfg = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
         cfg.pop("updatedAt", None)
-        CONFIG.write_text(to_toml(cfg), encoding="utf-8")
+        order = tomllib.loads(CONFIG.read_text(encoding="utf-8"))
+        CONFIG.write_text(to_toml(cfg, order), encoding="utf-8")

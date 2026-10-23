@@ -57,9 +57,15 @@ links = [
     "https://static.wikitide.net/pinnipediawiki/3/3b/Yo_and_tsuki.jpg",
     "https://static.wikitide.net/pinnipediawiki/5/58/2012-yochan.jpg",
     "https://static.wikitide.net/pinnipediawiki/1/10/New_Yo_Chan_gyu_-seals.mp4",
+    "https://media1.tenor.com/m/W9KQ8oXmMxAAAAAd/seal-looking.gif",
+    "https://tenor.com/view/seal-true-yochan-seal-eyes-tsukishima-lets-take-a-look-gif-1717216239618057854",
+    "https://tenor.com/view/seal-seals-fat-seal-seal-retract-scare-seal-gif-4879500682255135297",
 ]
 # Server sticker ids (right-click sticker > Copy ID)
-sticker_ids = []
+sticker_ids = [
+    "1562215781192835163",
+    "1401282511358787794",
+]
 
 [gyu]
 cooldown = 1
@@ -112,6 +118,7 @@ actions = [
     "*snorts*",
     "*does a gyu*",
     "*does hikoki*",
+    "*bottles*",
     "*banana pose*",
     "*blubs*",
     "*splash*",
@@ -144,7 +151,7 @@ lines = [
 ]
 
 [react]
-chance = 0.12
+chance = 0.5
 triggers = [
     "🦭",
     "🐟",
