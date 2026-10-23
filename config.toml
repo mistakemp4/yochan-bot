@@ -1,0 +1,176 @@
+[seal]
+cooldown = 1
+keywords = [
+    "seal",
+    "azarashi",
+    "tokkari",
+    "yochan",
+    "yo-chan",
+    "yo_chan",
+    "アザラシ",
+    "あざらし",
+    "海豹",
+    "トッカリ",
+    "🦭",
+]
+# Yo-chan gifs/images/videos she replies with
+links = [
+    "https://tenor.com/view/seal-looking-yo-chan-you-chan-gif-6616510173863621392",
+    "https://tenor.com/view/seal-tokkari-ringed-seal-yo-chan-tokkari-center-gif-13705901574623634449",
+    "https://tenor.com/view/seal-yo-chan-yo-chan-seal-seals-gif-2855087697982825028",
+    "https://tenor.com/view/yo-seal-tokkari-wave-hi-gif-652261372951428735",
+    "https://tenor.com/view/yo-chan-seal-tokkari-center-silly-seal-gyu-seal-gif-6359730273941497082",
+    "https://tenor.com/view/yo-chan-seal-tokkari-center-cute-gif-8409461453213318599",
+    "https://tenor.com/view/yo-chan-seal-yo-chan-belly-slap-slap-belly-tweaking-gif-742716559881751514",
+    "https://tenor.com/view/seal-tsuki-yo-yochan-yo-chan-gif-11169527452933361611",
+    "https://tenor.com/view/seal-yochan-yo-chan-tokkari-cute-gif-9202503401320846170",
+    "https://tenor.com/view/seal-yochan-yo-chan-tokkari-yochan-is-still-seething-with-love-gif-8492480162284976286",
+    "https://tenor.com/view/seal-seals-seal-of-approval-yo-chan-flying-gif-5440025144431881802",
+    "https://tenor.com/view/seal-seal-face-palm-seal-smh-yo-chan-azarashi-gif-686807952550536732",
+    "https://tenor.com/view/yochan-yo-yochan-bounce-kitsukitsukitsu-kitsucord-gif-4522880694232624457",
+    "https://tenor.com/view/yo-chan-seething-rage-yo-chan-seeting-with-rage-seal-gif-12247400694626630967",
+    "https://tenor.com/view/yochan-seal-chan-yo-gif-10711186688619405680",
+    "https://tenor.com/view/yo-chan-tokkari-center-tokkari-seal-seals-gif-10620745573200376112",
+    "https://tenor.com/view/seal-yo-chan-yo-anger-so-mad-gif-11570961919960469536",
+    "https://tenor.com/view/seal-seals-seal-of-approval-yo-chan-flying-gif-15720353218705401069",
+    "https://tenor.com/view/seal-seal-bounce-yo-chan-silly-seal-gif-260937240013992584",
+    "https://tenor.com/view/seal-yochan-seal-yochan-seals-cute-seal-gif-2391545611531827815",
+    "https://tenor.com/view/seal-seals-yochan-yochan-seal-yo-seal-gif-4519557087000843868",
+    "https://tenor.com/view/tsuki-yo-chan-yochan-yo-chan-seal-gif-9754721479543564224",
+    "https://tenor.com/view/yo-chan-seal-seals-bread-bread-seal-gif-11710605182813420035",
+    "https://tenor.com/view/angry-yo-chan-yo-chan-yo-chan-seal-yo-chan-seal-gif-17500088674661526358",
+    "https://tenor.com/view/yo-chan-tokkari-center-seal-fat-bye-bye-gif-8677824877215961908",
+    "https://tenor.com/view/yo-chan-yo-chan-seal-gyu-gif-8156200497046876099",
+    "https://tenor.com/view/seals-seal-seal-of-approval-silly-seal-yo-chan-gif-7823342955624971115",
+    "https://tenor.com/view/yo-chan-tokkari-center-dont-care-dgaf-seal-gif-13570654541562920504",
+    "https://tenor.com/view/yo-chan-yo-chan-seal-tokkari-center-seal-boop-gif-6325468985646839796",
+    "https://tenor.com/view/yo-chan-seal-yo-chan-good-morning-seal-good-morning-gif-13028893410982777870",
+    "https://tenor.com/view/yo-chan-mama-yo-seal-true-gif-13644163172368925125",
+    "https://tenor.com/view/seals-yo-chan-poke-annoy-gif-9681283685498395291",
+    "https://tenor.com/view/tokkari-center-yo-chan-kawaii-cute-ringed-seal-silly-gif-64721785605552747",
+    "https://static.wikitide.net/pinnipediawiki/1/13/Yochan_sept2025.webp",
+    "https://static.wikitide.net/pinnipediawiki/5/52/Yo_chan_egg.png",
+    "https://static.wikitide.net/pinnipediawiki/b/be/Baby_yo_chan_gyu.png",
+    "https://static.wikitide.net/pinnipediawiki/b/b2/Yo_chan.JPG",
+    "https://static.wikitide.net/pinnipediawiki/9/91/Yo%21.webp",
+    "https://static.wikitide.net/pinnipediawiki/d/de/Chan.webp",
+    "https://static.wikitide.net/pinnipediawiki/3/3b/Yo_and_tsuki.jpg",
+    "https://static.wikitide.net/pinnipediawiki/5/58/2012-yochan.jpg",
+    "https://static.wikitide.net/pinnipediawiki/1/10/New_Yo_Chan_gyu_-seals.mp4",
+]
+# Server sticker ids (right-click sticker > Copy ID)
+sticker_ids = []
+
+[gyu]
+cooldown = 1
+kaomoji_chance = 0.8
+action_chance = 0.4
+emoji_chance = 0.3
+line_chance = 0.12
+punctuation = [
+    "~",
+    "~~",
+    "!",
+    "!!",
+    "!~",
+    "…",
+    "♡",
+    "☆",
+    "!!!!!!!!",
+]
+kaomoji = [
+    "(っ˘ω˘ς )",
+    "(づ｡◕‿‿◕｡)づ",
+    "(⊃｡•́‿•̀｡)⊃",
+    "(˶ᵔ ᵕ ᵔ˶)",
+    "(๑˃ᴗ˂)ﻭ",
+    "(っ´ω`)ﾉ",
+    "(*´∀`)~♥",
+    "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
+    "(｀へ´)",
+    "( ˘•ω•˘ )",
+    "( ･ω･)",
+    "(ᵔᴥᵔ)",
+    ">w<",
+    "^w^",
+    ":3",
+    ">:3",
+]
+actions = [
+    "*galumphs over*",
+    "*galumph galumph galumph*",
+    "*galumphing intensifies*",
+    "*gapumphs at u*",
+    "*flop*",
+    "*squish*",
+    "*wiggles*",
+    "*boop*",
+    "*rolls over*",
+    "*happy flipper flaps*",
+    "*slaps belly*",
+    "*belly slap belly slap*",
+    "*snorts*",
+    "*does a gyu*",
+    "*does hikoki*",
+    "*banana pose*",
+    "*blubs*",
+    "*splash*",
+    "*bleh*",
+    "*mokoyo mode*",
+]
+emoji = [
+    "🦭",
+    "🦭💕",
+    "🐟",
+    "💙",
+    "🫧",
+    "🌊",
+    "❄️",
+    "☀️",
+    "✨",
+]
+# Rare full lines instead of a gyu
+lines = [
+    "OUT OF MY WAY!!!!!!!!",
+    "whuh…?",
+    "gyuuuuuuuu",
+    "*seething with love*",
+    "*seething with rage* (｀へ´)",
+    "fish. now. (｀へ´)",
+    "i dont care *flop*",
+    "bye bye *galumphs away*",
+    "good morning… *bleh*",
+    "*snorts* hmph",
+]
+
+[react]
+chance = 0.12
+triggers = [
+    "🦭",
+    "🐟",
+    "🐠",
+    "🐡",
+    "🎣",
+    "🍣",
+    "🐋",
+    "🐳",
+    "💧",
+    "💦",
+    "🌊",
+    "🫧",
+]
+# Custom server emoji names that count too
+custom_keywords = [
+    "seal",
+    "fish",
+    "water",
+    "yochan",
+    "azarashi",
+]
+reactions = [
+    "🦭",
+    "🐟",
+    "💙",
+    "🫧",
+    "✨",
+]

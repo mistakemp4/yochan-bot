@@ -1,0 +1,14 @@
+[Unit]
+Description=Yo-chan Discord bot
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/yochan-bot
+EnvironmentFile=%h/yochan-bot/.env
+ExecStart=%h/yochan-bot/.venv/bin/python -u bot.py
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
