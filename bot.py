@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import re
@@ -10,12 +11,16 @@ from urllib.parse import unquote, urlsplit
 
 import aiohttp
 import discord
+from discord import app_commands
+from discord.ext import tasks
 
 ROOT = Path(__file__).parent
 CONFIG = tomllib.loads((ROOT / "config.toml").read_text(encoding="utf-8"))
 SEAL = CONFIG["seal"]
 GYU = CONFIG["gyu"]
 REACT = CONFIG["react"]
+HUNGER = CONFIG["hunger"]
+STATE_FILE = ROOT / "state.json"
 MEDIA_DIR = ROOT / "media"
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov"}
 MAX_UPLOAD = 10 * 1024 * 1024
@@ -28,14 +33,21 @@ GYU_LETTERS = [
     "\N{REGIONAL INDICATOR SYMBOL LETTER Y}",
     "\N{REGIONAL INDICATOR SYMBOL LETTER U}",
 ]
+# hunger level -> lowest fullness % for it
+LEVELS = [("full", 80), ("content", 50), ("peckish", 25), ("hungry", 10), ("starving", 0)]
+HUNGRY = {"hungry", "starving"}
 
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
 
 last_sent: dict[tuple[str, int], float] = {}
 # message id -> letters in add order, None once answered
 reaction_seq: OrderedDict[int, list[str] | None] = OrderedDict()
+# guild id -> hunger state, saved to state.json
+state: dict[str, dict] = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
+synced = False
 
 
 def ready(kind: str, channel_id: int) -> bool:
@@ -91,6 +103,65 @@ def gyu_line(n_u: int) -> str:
     if random.random() < GYU["emoji_chance"]:
         line += " " + random.choice(GYU["emoji"])
     return line
+
+
+def save_state() -> None:
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(STATE_FILE)
+
+
+def belly(guild_id: int) -> dict:
+    return state.setdefault(
+        str(guild_id), {"fullness": HUNGER["start"], "at": time.time(), "begged": None, "channel": None}
+    )
+
+
+def fullness(b: dict) -> float:
+    drained = (time.time() - b["at"]) / 3600 * 100 / HUNGER["hours_to_empty"]
+    return max(0.0, b["fullness"] - drained)
+
+
+def level(full: float) -> str:
+    return next(name for name, floor in LEVELS if full >= floor)
+
+
+def meter(full: float) -> str:
+    filled = round(full / 10)
+    return f"{'▰' * filled}{'▱' * (10 - filled)} {int(full)}%"
+
+
+def count_food(content: str) -> int:
+    n = sum(content.count(f) for f in HUNGER["foods"])
+    n += sum(has_keyword(name, HUNGER["custom_keywords"]) for name in CUSTOM_EMOJI_RE.findall(content))
+    return min(n, HUNGER["max_fish"])
+
+
+def is_food(emoji: discord.PartialEmoji) -> bool:
+    if emoji.is_custom_emoji():
+        return has_keyword(emoji.name or "", HUNGER["custom_keywords"])
+    return emoji.name in HUNGER["foods"]
+
+
+def feed(guild_id: int, fish: int) -> str:
+    b = belly(guild_id)
+    before = fullness(b)
+    if before >= 95:
+        return random.choice(HUNGER["refuse"])
+    after = min(100.0, before + fish * HUNGER["per_fish"])
+    b["fullness"], b["at"] = after, time.time()
+    # beg again only if she's still hungry after eating
+    b["begged"] = level(after) if level(after) in HUNGRY else None
+    save_state()
+    lines = HUNGER["eat_starving"] if level(before) in HUNGRY else HUNGER["eat"]
+    return f"{random.choice(lines)}\n{meter(after)}"
+
+
+def hungry_talk(guild_id: int) -> str | None:
+    lvl = level(fullness(belly(guild_id)))
+    if lvl in HUNGRY and random.random() < HUNGER["talk_chance"]:
+        return random.choice(HUNGER[lvl])
+    return None
 
 
 async def is_seal(message: discord.Message) -> bool:
@@ -160,21 +231,68 @@ async def send_seal(message: discord.Message) -> None:
         await message.reply(stickers=[sticker], mention_author=False)
 
 
+@tree.command(description="How hungry is Yo-chan?")
+@app_commands.guild_only()
+async def hunger(interaction: discord.Interaction):
+    full = fullness(belly(interaction.guild_id))
+    lvl = level(full)
+    await interaction.response.send_message(f"{meter(full)} · {lvl}\n{random.choice(HUNGER[lvl])}")
+
+
+@tasks.loop(minutes=HUNGER["beg_check_minutes"])
+async def beg():
+    for guild_id, b in state.items():
+        lvl = level(fullness(b))
+        if lvl not in HUNGRY or b["begged"] == lvl or not b["channel"]:
+            continue
+        b["begged"] = lvl
+        save_state()
+        channel = client.get_channel(b["channel"])
+        if channel is None:
+            continue
+        try:
+            await channel.send(random.choice(HUNGER[lvl]))
+        except discord.HTTPException:
+            pass
+
+
 @client.event
 async def on_ready():
+    global synced
     print(f"logged in as {client.user} ({len(media_pool())} seal media)", flush=True)
+    if not synced:
+        # per-guild sync shows up instantly, global can lag
+        for guild in client.guilds:
+            tree.copy_global_to(guild=guild)
+            await tree.sync(guild=guild)
+        synced = True
+    if not beg.is_running():
+        beg.start()
 
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.author.bot or message.guild is None:
+    if message.guild is None:
+        return
+    if message.author == client.user:
+        # she begs where she last talked
+        belly(message.guild.id)["channel"] = message.channel.id
+        save_state()
+        return
+    if message.author.bot:
         return
     match = GYU_RE.search(message.content)
     if match and ready("gyu", message.channel.id):
-        await message.reply(gyu_line(len(match.group(1)) + random.randint(0, 2)), mention_author=False)
+        line = hungry_talk(message.guild.id) or gyu_line(len(match.group(1)) + random.randint(0, 2))
+        await message.reply(line, mention_author=False)
     if await is_seal(message) and ready("seal", message.channel.id):
         await send_seal(message)
-    if wants_react(message.content) and random.random() < REACT["chance"]:
+    fish = count_food(message.content)
+    if fish:
+        line = feed(message.guild.id, fish)
+        if ready("hunger", message.channel.id):
+            await message.reply(line, mention_author=False)
+    elif wants_react(message.content) and random.random() < REACT["chance"]:
         await message.add_reaction(random.choice(REACT["reactions"]))
 
 
@@ -183,6 +301,12 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if payload.guild_id is None or payload.user_id == client.user.id:
         return
     if payload.member and payload.member.bot:
+        return
+    if payload.message_author_id == client.user.id and is_food(payload.emoji):
+        line = feed(payload.guild_id, 1)
+        channel = client.get_channel(payload.channel_id)
+        if channel and ready("hunger", payload.channel_id):
+            await channel.get_partial_message(payload.message_id).reply(line, mention_author=False)
         return
     letter = payload.emoji.name
     if letter not in GYU_LETTERS:
@@ -203,7 +327,8 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if channel is None or not ready("gyu", payload.channel_id):
         return
     target = channel.get_partial_message(payload.message_id)
-    await target.reply(gyu_line(random.randint(2, 6)), mention_author=False)
+    line = hungry_talk(payload.guild_id) or gyu_line(random.randint(2, 6))
+    await target.reply(line, mention_author=False)
 
 
 if __name__ == "__main__":

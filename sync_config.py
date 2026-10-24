@@ -9,12 +9,21 @@ COMMENTS = {
     ("seal", "sticker_ids"): "# Server sticker ids (right-click sticker > Copy ID)",
     ("gyu", "lines"): "# Rare full lines instead of a gyu",
     ("react", "custom_keywords"): "# Custom server emoji names that count too",
+    ("hunger", "foods"): "# Emoji that count as fish (in a message or as a reaction on her message)",
+    ("hunger", "custom_keywords"): "# Custom server emoji names that count as fish",
+    ("hunger", "full"): "# What she says at each hunger level (/hunger, begging, sometimes instead of a gyu)",
+    ("hunger", "eat"): "# When she eats",
+    ("hunger", "eat_starving"): "# When she eats while hungry or starving",
+    ("hunger", "refuse"): "# When she's too full to eat",
 }
+SECTIONS = ("seal", "gyu", "react", "hunger")
 
 
 def to_toml(cfg: dict, order: dict) -> str:
     out = []
-    for section in ("seal", "gyu", "react"):
+    for section in SECTIONS:
+        # keep sections the editor doesn't know about yet
+        cfg.setdefault(section, order.get(section, {}))
         out.append(f"[{section}]")
         known = list(order.get(section, {}))
         keys = [k for k in known if k in cfg[section]] + [k for k in cfg[section] if k not in known]

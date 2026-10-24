@@ -181,3 +181,82 @@ reactions = [
     "🫧",
     "✨",
 ]
+
+[hunger]
+cooldown = 1
+hours_to_empty = 12
+start = 70
+per_fish = 25
+max_fish = 4
+talk_chance = 0.35
+beg_check_minutes = 5
+# Emoji that count as fish (in a message or as a reaction on her message)
+foods = [
+    "🐟",
+    "🐠",
+    "🐡",
+    "🍣",
+    "🦐",
+    "🦑",
+]
+# Custom server emoji names that count as fish
+custom_keywords = [
+    "fish",
+    "sushi",
+    "shrimp",
+]
+# What she says at each hunger level (/hunger, begging, sometimes instead of a gyu)
+full = [
+    "*rolls over* so full… gyu~",
+    "*slaps belly* belly full of fish ♡",
+    "no more… *flop*",
+    "*happy flipper flaps* (˶ᵔ ᵕ ᵔ˶)",
+]
+content = [
+    "*wiggles* gyu~",
+    "i could eat. not now tho",
+    "*blubs contentedly*",
+    "fish later? fish later.",
+]
+peckish = [
+    "…is that a fish? *sniffs*",
+    "*stares at the bucket*",
+    "snack time soon? ( ･ω･)",
+    "*belly rumble* gyu…",
+]
+hungry = [
+    "fish. now. (｀へ´)",
+    "*slaps belly* EMPTY",
+    "i am wasting away *flop*",
+    "who forgot to feed the seal… (｀へ´)",
+    "*galumphs at u* 🐟?? 🐟??",
+]
+starving = [
+    "*seething with hunger* (｀へ´)",
+    "FISH!!!!!!!!",
+    "i can see the light… it is shaped like a fish…",
+    "*lies on the floor dramatically* tell tsuki i loved her",
+    "GYUUUUU (feed me)",
+]
+# When she eats
+eat = [
+    "*nom nom nom*",
+    "*inhales fish* gyu~",
+    "*happy flipper flaps* fish ♡",
+    "*chomp* (๑˃ᴗ˂)ﻭ",
+    "*swallows it whole* more?",
+]
+# When she eats while hungry or starving
+eat_starving = [
+    "FINALLY *inhales fish*",
+    "*snatches it* MINE (｀へ´)",
+    "*eats it in 0.2 seconds* …more.",
+    "i was so close to death… *nom*",
+]
+# When she's too full to eat
+refuse = [
+    "i'm full… *rolls away*",
+    "*turns head away* bleh",
+    "no. *flop*",
+    "*slaps belly* full. come back later",
+]
