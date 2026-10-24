@@ -4,8 +4,11 @@ import re
 import time
 import tomllib
 from collections import OrderedDict
+from io import BytesIO
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
+import aiohttp
 import discord
 
 ROOT = Path(__file__).parent
@@ -15,6 +18,7 @@ GYU = CONFIG["gyu"]
 REACT = CONFIG["react"]
 MEDIA_DIR = ROOT / "media"
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov"}
+MAX_UPLOAD = 10 * 1024 * 1024
 
 GYU_RE = re.compile(r"(?<![a-z])gy(u+)(?![a-z])", re.IGNORECASE)
 URL_RE = re.compile(r"https?://\S+")
@@ -116,6 +120,28 @@ def media_pool() -> list[tuple[str, object]]:
     return pool
 
 
+async def fetch_media(url: str) -> discord.File | None:
+    # direct media links get uploaded, Discord's unfurler flakes on some
+    name = unquote(Path(urlsplit(url).path).name)
+    if Path(name).suffix.lower() not in MEDIA_EXTS:
+        return None
+    timeout = aiohttp.ClientTimeout(total=15)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                if resp.status != 200 or (resp.content_length or 0) > MAX_UPLOAD:
+                    return None
+                buf = BytesIO()
+                async for chunk in resp.content.iter_chunked(64 * 1024):
+                    if buf.tell() + len(chunk) > MAX_UPLOAD:
+                        return None
+                    buf.write(chunk)
+    except (aiohttp.ClientError, TimeoutError):
+        return None
+    buf.seek(0)
+    return discord.File(buf, filename=name)
+
+
 async def send_seal(message: discord.Message) -> None:
     pool = media_pool()
     if not pool:
@@ -124,7 +150,11 @@ async def send_seal(message: discord.Message) -> None:
     if kind == "file":
         await message.reply(file=discord.File(value), mention_author=False)
     elif kind == "link":
-        await message.reply(value, mention_author=False)
+        file = await fetch_media(value)
+        if file:
+            await message.reply(file=file, mention_author=False)
+        else:
+            await message.reply(value, mention_author=False)
     else:
         sticker = client.get_sticker(value) or await client.fetch_sticker(value)
         await message.reply(stickers=[sticker], mention_author=False)
