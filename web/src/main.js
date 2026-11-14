@@ -166,8 +166,9 @@ function play(p) {
     return x >= 0 && x < p.w && y >= 0 && y < p.h ? [x, y] : null;
   };
   cv.onclick = e => { const c = cellAt(e); if (c) { g.focus = c; turn(c); } };
-  cv.onmousemove = e => { const c = cellAt(e); cv.style.cursor = c && !g.locked ? "pointer" : "default"; if (String(c) !== String(g.hover)) { g.hover = c; paint(); } };
-  cv.onmouseleave = () => { g.hover = null; paint(); };
+  // touch has no hover; a tap would leave one stuck
+  cv.onpointermove = e => { if (e.pointerType !== "mouse") return; const c = cellAt(e); cv.style.cursor = c && !g.locked ? "pointer" : "default"; if (String(c) !== String(g.hover)) { g.hover = c; paint(); } };
+  cv.onpointerleave = () => { g.hover = null; paint(); };
   cv.onfocus = cv.onblur = paint;
   cv.onkeydown = e => {
     let [x, y] = g.focus;
@@ -177,7 +178,7 @@ function play(p) {
   };
   $("go").disabled = false; $("go").onclick = release;
   $("gain").textContent = "";
-  msg("Click a pipe to turn it. Get the water from the sea to her pool.");
+  msg((matchMedia("(pointer: coarse)").matches ? "Tap" : "Click") + " a pipe to turn it. Get the water from the sea to her pool.");
   paint();
   every(() => {
     const left = Math.max(0, g.deadline - Date.now());

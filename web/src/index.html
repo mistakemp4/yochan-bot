@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Tide Pool</title>
 <style>
-:root { --bg: #2b2116; --text: #f1e2c2; --muted: #b9a582; --ice: #8fd0f4; --green: #248046; --blurple: #5865f2; --grey: #4e5058; color-scheme: dark; }
+:root { --bg: #2b2116; --text: #f1e2c2; --muted: #b9a582; --ice: #8fd0f4; --green: #248046; --blurple: #5865f2; --grey: #4e5058; color-scheme: dark;
+  --sait: var(--discord-safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --saib: var(--discord-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --sail: var(--discord-safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --sair: var(--discord-safe-area-inset-right, env(safe-area-inset-right, 0px)); }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+/* phone notch / Discord overlay */
+body { padding: var(--sait) var(--sair) var(--saib) var(--sail); }
 main { max-width: 900px; margin: 0 auto; padding: 14px; display: grid; gap: 10px; }
 .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .top b { font-size: 1.1rem; }
