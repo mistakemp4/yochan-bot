@@ -1,0 +1,184 @@
+# Fish Frenzy riddles. Players react with `answer` (or anything in `also`).
+# clue shows first, hint after a few seconds. name is only for the emoji search.
+
+[[riddle]]
+answer = "🐙"
+also = []
+name = "octopus"
+clue = "eight arms, zero bones"
+hint = "squirts ink and squeezes through tiny gaps"
+
+[[riddle]]
+answer = "🦑"
+also = []
+name = "squid"
+clue = "ten arms and a beak"
+hint = "calamari when it's dinner"
+
+[[riddle]]
+answer = "🦀"
+also = []
+name = "crab"
+clue = "only ever walks sideways"
+hint = "pinchy beach guy"
+
+[[riddle]]
+answer = "🦞"
+also = []
+name = "lobster"
+clue = "turns red in hot water"
+hint = "huge claws, in fancy resturants"
+
+[[riddle]]
+answer = "🦐"
+also = ["🍤"]
+name = "shrimp"
+clue = "tiny, curled up, my favourite snack after fish"
+hint = "a shrimp. it's a shrimp"
+
+[[riddle]]
+answer = "🐡"
+also = []
+name = "blowfish"
+clue = "turns into a spiky balloon when scared"
+hint = "the puffer"
+
+[[riddle]]
+answer = "🐠"
+also = []
+name = "tropical fish"
+clue = "stripy and colourful, lives on the reef"
+hint = "the bright tropical one"
+
+[[riddle]]
+answer = "🐟"
+also = []
+name = "fish"
+clue = "the most important food in the world"
+hint = "plain. fish."
+
+[[riddle]]
+answer = "🦈"
+also = []
+name = "shark"
+clue = "the most famous fin in the ocean"
+hint = "dun dun… dun dun…"
+
+[[riddle]]
+answer = "🐳"
+also = ["🐋"]
+name = "whale"
+clue = "breathes through the top of its head"
+hint = "spouting whale"
+
+[[riddle]]
+answer = "🐬"
+also = []
+name = "dolphin"
+clue = "clicks, squeaks and does flips at the aquarium"
+hint = "smiley grey swimmer"
+
+[[riddle]]
+answer = "🦭"
+also = []
+name = "seal"
+clue = "the cutest animal that exists"
+hint = "me!!! it's me"
+
+[[riddle]]
+answer = "🐧"
+also = []
+name = "penguin"
+clue = "a bird that swims instead of flying"
+hint = "tuxedo bird"
+
+[[riddle]]
+answer = "🐢"
+also = []
+name = "turtle"
+clue = "carries its house everywhere"
+hint = "slow on land, fast in water"
+
+[[riddle]]
+answer = "🪼"
+also = []
+name = "jellyfish"
+clue = "no brain, no heart, still stings"
+hint = "see-through and wobbly"
+
+[[riddle]]
+answer = "🦦"
+also = []
+name = "otter"
+clue = "holds hands so it doesn't float away while sleeping"
+hint = "cracks shells on its tummy"
+
+[[riddle]]
+answer = "🐚"
+also = []
+name = "shell"
+clue = "hold it to your ear to hear the ocean"
+hint = "spiral beach souvenir"
+
+[[riddle]]
+answer = "🪸"
+also = []
+name = "coral"
+clue = "looks like a plant, is actually animals"
+hint = "the reef itself"
+
+[[riddle]]
+answer = "🦪"
+also = []
+name = "oyster"
+clue = "sometimes there's a pearl inside"
+hint = "slurped raw with lemon"
+
+[[riddle]]
+answer = "🐻‍❄️"
+also = []
+name = "polar bear"
+clue = "black skin under white fur. eats seals. rude"
+hint = "big white bear"
+
+[[riddle]]
+answer = "🧊"
+also = []
+name = "ice"
+clue = "what i lie on back home in Okhotsk"
+hint = "frozen cube"
+
+[[riddle]]
+answer = "❄️"
+also = []
+name = "snowflake"
+clue = "no two are the same"
+hint = "tiny frozen star"
+
+[[riddle]]
+answer = "🌊"
+also = []
+name = "wave"
+clue = "surfers wait all day for a good one"
+hint = "big blue curl"
+
+[[riddle]]
+answer = "🌙"
+also = ["🌕", "🌛", "🌜", "🌝", "🌚", "🌑"]
+name = "moon"
+clue = "tsuki means this in japanese"
+hint = "it pulls the tides"
+
+[[riddle]]
+answer = "🏝️"
+also = []
+name = "island"
+clue = "stranded with one palm tree"
+hint = "tiny desert island"
+
+[[riddle]]
+answer = "🍣"
+also = []
+name = "sushi"
+clue = "raw fish on a pillow of rice"
+hint = "conveyor belt food"
