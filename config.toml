@@ -260,3 +260,80 @@ refuse = [
     "no. *flop*",
     "*slaps belly* full. come back later",
 ]
+
+[home]
+# Channel names she picks for auto messages when she joins a server, best first.
+# A name matches exactly or as one dash-separated word ("bot" matches "bot-spam")
+auto_names = [
+    "yo-chan",
+    "yochan",
+    "bot",
+    "bots",
+    "bot-spam",
+    "bot-commands",
+]
+
+[fun]
+# Enrichment: games and pats fill it, it drains over time. Separate from hunger
+hours_to_empty = 24
+start = 60
+# no gains at or above this %
+tired_at = 95
+tidepool_per_tile = 4
+tidepool_loss = 3
+gyusays_per_round = 3
+# What she says at each enrichment level (/enrichment)
+thrilled = [
+    "*happy flipper flaps* best day ever!!",
+    "*zooms around the pool* gyu gyu gyu~",
+    "i love all of you *galumphs*",
+    "*splashes everyone on purpose* hehe gyu!!",
+    "*does a full belly slide across the floor* WHEEE",
+    "my tail won't stop wiggling (≧▽≦)",
+    "*barrel rolls in the water* again again again",
+    "best friends forever ok?? *boop*",
+]
+happy = [
+    "*wiggles* gyu~",
+    "that was fun (˶ᵔ ᵕ ᵔ˶)",
+    "*rolls over contentedly*",
+    "*chirps happily*",
+    "*sunbathes on a rock* life is good~",
+    "*boops ur hand* gyu ♡",
+    "*happy little blub noises*",
+    "you're fun to play with~",
+]
+okay = [
+    "*blubs* i'm fine",
+    "could play a little… if u want",
+    "( ･ω･) …play?",
+    "*floats on back* mm.. just vibing",
+    "*yawns* gyu",
+    "*scoots a little closer*",
+    "not bad, not great. a solid gyu",
+    "*blinks slowly at u*",
+]
+bored = [
+    "*pushes a beach ball at u* … play with me",
+    "*stares at the wall* so bored… gyu",
+    "/gyusays?? /tidepool??",
+    "*sighs into the water* blub blub blub",
+    "*counts the tiles on the floor* … 47",
+    "*nudges u with nose* hey. hey. hey.",
+    "i could be playing right now. just saying",
+    "*rolls back and forth* boooored",
+]
+gloomy = [
+    "*flops dramatically* nobody plays with me anymore",
+    "*lies on the floor* i've forgotten what fun is",
+    "gyu… (｀へ´)",
+    "*sinks to the bottom of the pool*",
+    "*hides under a towel* don't look at me",
+    "*sad little gyu* …",
+    "remember when we used to play? (´・ω・`)",
+    "*stares out the window at the sea*",
+]
+
+[activity]
+# local port for the Tide Pool web page; tailscale funnel makes it public
+port = 8787

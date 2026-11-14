@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tide Pool</title>
+<style>
+:root { --bg: #2b2116; --text: #f1e2c2; --muted: #b9a582; --ice: #8fd0f4; --green: #248046; --blurple: #5865f2; --grey: #4e5058; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 900px; margin: 0 auto; padding: 14px; display: grid; gap: 10px; }
+.top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.top b { font-size: 1.1rem; }
+#time { font-family: ui-monospace, monospace; color: var(--ice); }
+.timer { height: 6px; border-radius: 3px; background: #4a3a26; overflow: hidden; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--ice); transition: width .25s linear; }
+canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; outline: none; touch-action: manipulation; }
+canvas:focus-visible { box-shadow: 0 0 0 2px var(--ice); }
+.ctl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { font: 500 .9rem system-ui, sans-serif; color: #fff; border: 0; border-radius: 4px; padding: 8px 16px; cursor: pointer; background: var(--grey); }
+button.go { background: var(--green); }
+button.primary { background: var(--blurple); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+#msg { color: var(--muted); }
+#gain { color: #7ee2a0; font-family: ui-monospace, monospace; font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><b>Tide Pool</b><span id="msg">Connecting…</span><span id="time"></span></div>
+  <div class="timer"><i id="bar"></i></div>
+  <canvas id="board" tabindex="0" aria-label="Pipe board. Click a pipe or use arrow keys and space to turn it."></canvas>
+  <div class="ctl"><button class="go" id="go" disabled>💧 Release water</button><button id="fresh" disabled>New pool</button><span id="gain"></span></div>
+</main>
+<script type="module" src="/assets/app.js"></script>
+</body>
+</html>

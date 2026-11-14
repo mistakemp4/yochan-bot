@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import random
@@ -14,12 +15,18 @@ import discord
 from discord import app_commands
 from discord.ext import tasks
 
+import activity
+from gyusays import GyuSays
+
 ROOT = Path(__file__).parent
 CONFIG = tomllib.loads((ROOT / "config.toml").read_text(encoding="utf-8"))
 SEAL = CONFIG["seal"]
 GYU = CONFIG["gyu"]
 REACT = CONFIG["react"]
 HUNGER = CONFIG["hunger"]
+HOME = CONFIG["home"]
+FUN = CONFIG["fun"]
+ACTIVITY = CONFIG["activity"]
 STATE_FILE = ROOT / "state.json"
 MEDIA_DIR = ROOT / "media"
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov"}
@@ -36,6 +43,8 @@ GYU_LETTERS = [
 # hunger level -> lowest fullness % for it
 LEVELS = [("full", 80), ("content", 50), ("peckish", 25), ("hungry", 10), ("starving", 0)]
 HUNGRY = {"hungry", "starving"}
+# enrichment level -> lowest %
+FUN_LEVELS = [("thrilled", 80), ("happy", 50), ("okay", 25), ("bored", 10), ("gloomy", 0)]
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -48,6 +57,7 @@ reaction_seq: OrderedDict[int, list[str] | None] = OrderedDict()
 # guild id -> hunger state, saved to state.json
 state: dict[str, dict] = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
 synced = False
+web_runner = None
 
 
 def ready(kind: str, channel_id: int) -> bool:
@@ -112,9 +122,38 @@ def save_state() -> None:
 
 
 def belly(guild_id: int) -> dict:
+    # channel = last one she talked in, home = picked for auto messages
     return state.setdefault(
-        str(guild_id), {"fullness": HUNGER["start"], "at": time.time(), "begged": None, "channel": None}
+        str(guild_id),
+        {"fullness": HUNGER["start"], "at": time.time(), "begged": None, "channel": None, "home": None},
     )
+
+
+def can_post(channel: discord.abc.GuildChannel) -> bool:
+    perms = channel.permissions_for(channel.guild.me)
+    return perms.view_channel and perms.send_messages
+
+
+def find_home(guild: discord.Guild) -> discord.TextChannel | None:
+    # best auto_names match she can post in
+    def rank(ch: discord.TextChannel) -> int | None:
+        name = ch.name.lower()
+        words = re.split(r"[-_]+", name)
+        hits = [i for i, n in enumerate(HOME["auto_names"]) if name == n or n in words]
+        return min(hits) if hits else None
+
+    ranked = [(r, ch.position, ch) for ch in guild.text_channels if (r := rank(ch)) is not None and can_post(ch)]
+    return min(ranked, key=lambda t: t[:2])[2] if ranked else None
+
+
+def home_channel(guild_id: int) -> discord.abc.Messageable | None:
+    # picked channel, else wherever she last talked
+    b = belly(guild_id)
+    for cid in (b.get("home"), b["channel"]):
+        channel = client.get_channel(cid) if cid else None
+        if channel is not None and can_post(channel):
+            return channel
+    return None
 
 
 def fullness(b: dict) -> float:
@@ -162,6 +201,37 @@ def hungry_talk(guild_id: int) -> str | None:
     if lvl in HUNGRY and random.random() < HUNGER["talk_chance"]:
         return random.choice(HUNGER[lvl])
     return None
+
+
+def fun_state(guild_id: int) -> dict:
+    # older state files have no enrichment yet
+    b = belly(guild_id)
+    b.setdefault("fun", FUN["start"])
+    b.setdefault("fun_at", time.time())
+    return b
+
+
+def fun_now(b: dict) -> float:
+    drained = (time.time() - b["fun_at"]) / 3600 * 100 / FUN["hours_to_empty"]
+    return max(0.0, b["fun"] - drained)
+
+
+def fun_level(v: float) -> str:
+    return next(name for name, floor in FUN_LEVELS if v >= floor)
+
+
+def enrich(guild_id: int, amount: float) -> float:
+    """Add enrichment, returns what was actually added."""
+    b = fun_state(guild_id)
+    before = fun_now(b)
+    gain = 0.0 if before >= FUN["tired_at"] else min(100.0 - before, max(0.0, amount))
+    b["fun"], b["fun_at"] = before + gain, time.time()
+    save_state()
+    return gain
+
+
+def gain_line(gain: float) -> str:
+    return f"\n-# +{round(gain)}% enrichment" if gain >= 0.5 else "\n-# she's played out, no enrichment"
 
 
 async def is_seal(message: discord.Message) -> bool:
@@ -239,17 +309,142 @@ async def hunger(interaction: discord.Interaction):
     await interaction.response.send_message(f"{meter(full)} · {lvl}\n{random.choice(HUNGER[lvl])}")
 
 
+channel_group = app_commands.Group(
+    name="channel",
+    description="Where Yo-chan posts on her own",
+    guild_only=True,
+    default_permissions=discord.Permissions(manage_guild=True),
+)
+
+
+@channel_group.command(name="show", description="Show where Yo-chan posts on her own")
+async def channel_show(interaction: discord.Interaction):
+    b = belly(interaction.guild_id)
+    if b.get("home"):
+        text = f"i post my own messages in <#{b['home']}> gyu~"
+    else:
+        text = "no channel picked, i post wherever i last talked. use `/channel set` to pick one"
+    await interaction.response.send_message(text, ephemeral=True)
+
+
+@channel_group.command(name="set", description="Pick the channel Yo-chan posts in on her own")
+@app_commands.describe(channel="Where she begs for fish and posts on her own")
+async def channel_set(interaction: discord.Interaction, channel: discord.TextChannel):
+    if not can_post(channel):
+        await interaction.response.send_message(f"i can't send messages in {channel.mention} ;-; check my permissions there", ephemeral=True)
+        return
+    belly(interaction.guild_id)["home"] = channel.id
+    save_state()
+    await interaction.response.send_message(f"ok!! i'll post in {channel.mention} *flop*", ephemeral=True)
+
+
+@channel_group.command(name="follow", description="Post wherever Yo-chan last talked instead")
+async def channel_follow(interaction: discord.Interaction):
+    belly(interaction.guild_id)["home"] = None
+    save_state()
+    await interaction.response.send_message("ok, i'll post wherever i last talked~", ephemeral=True)
+
+
+tree.add_command(channel_group)
+
+
+def auto_home(guild: discord.Guild) -> discord.TextChannel | None:
+    # only for servers that never had one picked
+    b = belly(guild.id)
+    if b.get("home") or b.get("home_checked"):
+        return None
+    b["home_checked"] = True
+    found = find_home(guild)
+    b["home"] = found.id if found else None
+    save_state()
+    return found
+
+
+@tree.command(description="How enriched is Yo-chan?")
+@app_commands.guild_only()
+async def enrichment(interaction: discord.Interaction):
+    v = fun_now(fun_state(interaction.guild_id))
+    lvl = fun_level(v)
+    await interaction.response.send_message(f"{meter(v)} · {lvl}\n{random.choice(FUN[lvl])}")
+
+
+@tree.command(description="Play Gyu Says: remember her snack order")
+@app_commands.guild_only()
+async def gyusays(interaction: discord.Interaction):
+    guild_id = interaction.guild_id
+
+    def on_end(cleared: int) -> str:
+        return gain_line(enrich(guild_id, cleared * FUN["gyusays_per_round"])) if cleared else ""
+
+    view = GyuSays(interaction.user.id, on_end)
+    await interaction.response.send_message("gyu says…", view=view)
+    view.message = await interaction.original_response()
+    await view.next_round()
+
+
+class TidePlay(discord.ui.View):
+    # persistent: the Play button keeps working after restarts
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Play Tide Pool", emoji="🌊", style=discord.ButtonStyle.primary, custom_id="tidepool:play")
+    async def play(self, interaction: discord.Interaction, _button: discord.ui.Button):
+        try:
+            await interaction.response.launch_activity()
+        except discord.HTTPException as e:
+            print(f"launch_activity failed: {e}", flush=True)
+            await interaction.response.send_message("the game window isn't set up yet… gyu", ephemeral=True)
+
+
+@tree.command(description="Play Tide Pool: get the water to Yo-chan's pool")
+@app_commands.guild_only()
+async def tidepool(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        "gyu!! help me fill my pool *flop*\n-# turn the pipes so the water reaches me. longer paths count for more",
+        view=TidePlay(),
+    )
+
+
+async def tide_result(user_id: int, guild_id: int | None, channel_id: int | None, res: dict) -> dict:
+    # called by the web server once it has checked the board
+    guild = client.get_guild(guild_id) if guild_id else None
+    if guild is None:
+        return {}
+    try:
+        await guild.fetch_member(user_id)
+    except discord.HTTPException:
+        return {}
+    tiles = res["tiles"]
+    gain = enrich(guild.id, tiles * FUN["tidepool_per_tile"] if res["won"] else FUN["tidepool_loss"])
+    if res["won"]:
+        extra = " · longer than my path, show-off ✨" if tiles > res["best"] else ""
+        text = f"<@{user_id}> filled my pool!! {tiles} tiles of water *splash*{extra}"
+    elif tiles:
+        text = f"<@{user_id}> tried to fill my pool but it leaked ;-; {tiles} tiles of water"
+    else:
+        text = f"<@{user_id}>'s water didn't even get into the first pipe… gyu"
+    channel = guild.get_channel_or_thread(channel_id) if channel_id else None
+    if channel is None or not can_post(channel):
+        channel = home_channel(guild.id)
+    if channel is not None:
+        try:
+            await channel.send(text + gain_line(gain), allowed_mentions=discord.AllowedMentions.none())
+        except discord.HTTPException:
+            pass
+    return {"gain": gain}
+
+
 @tasks.loop(minutes=HUNGER["beg_check_minutes"])
 async def beg():
     for guild_id, b in state.items():
         lvl = level(fullness(b))
-        if lvl not in HUNGRY or b["begged"] == lvl or not b["channel"]:
+        if lvl not in HUNGRY or b["begged"] == lvl:
+            continue
+        channel = home_channel(int(guild_id))
+        if channel is None:
             continue
         b["begged"] = lvl
         save_state()
-        channel = client.get_channel(b["channel"])
-        if channel is None:
-            continue
         try:
             await channel.send(random.choice(HUNGER[lvl]))
         except discord.HTTPException:
@@ -258,7 +453,7 @@ async def beg():
 
 @client.event
 async def on_ready():
-    global synced
+    global synced, web_runner
     print(f"logged in as {client.user} ({len(media_pool())} seal media)", flush=True)
     if not synced:
         # per-guild sync shows up instantly, global can lag
@@ -266,8 +461,26 @@ async def on_ready():
             tree.copy_global_to(guild=guild)
             await tree.sync(guild=guild)
         synced = True
+        client.add_view(TidePlay())
+        web_runner = await activity.start(tide_result, ACTIVITY["port"])
+    for guild in client.guilds:
+        found = auto_home(guild)
+        if found:
+            print(f"{guild.name}: auto messages go to #{found.name}", flush=True)
     if not beg.is_running():
         beg.start()
+
+
+@client.event
+async def on_guild_join(guild: discord.Guild):
+    tree.copy_global_to(guild=guild)
+    await tree.sync(guild=guild)
+    found = auto_home(guild)
+    if found:
+        try:
+            await found.send("gyu!! i'll post my own stuff here. mods can change it with `/channel set` *flop*")
+        except discord.HTTPException:
+            pass
 
 
 @client.event

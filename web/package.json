@@ -1,0 +1,14 @@
+{
+  "name": "tidepool-activity",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --format=esm --target=es2020 --outfile=dist/assets/app.js && cp src/index.html dist/index.html"
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "2.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
+  }
+}
