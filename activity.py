@@ -39,6 +39,16 @@ def make_app(on_result: ResultHook, client_id: str, client_secret: str, dev: boo
         sessions[token] = (uid, time.time())
         return uid
 
+    def log_timing(uid: int, t) -> None:
+        # page's connect step times (ms); only known keys, numbers
+        if not isinstance(t, dict):
+            return
+        keys = ("page", "config", "ready", "authorize", "token", "authenticate")
+        parts = [f"{k}={t[k] / 1000:.1f}s" for k in keys
+                 if isinstance(t.get(k), (int, float)) and not isinstance(t[k], bool) and 0 <= t[k] < 1e7]
+        if parts:
+            print(f"tidepool: user {uid} connect {' '.join(parts)}", flush=True)
+
     def snowflake(v) -> int | None:
         return int(v) if isinstance(v, str) and v.isdigit() else None
 
@@ -59,6 +69,7 @@ def make_app(on_result: ResultHook, client_id: str, client_secret: str, dev: boo
     async def new_game(request: web.Request):
         uid = await user_for(request)
         body = await request.json()
+        log_timing(uid, body.get("timing"))
         now = time.time()
         for gid in [g for g, v in games.items() if now - v["at"] > GAME_TTL]:
             del games[gid]

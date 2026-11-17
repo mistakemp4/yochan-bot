@@ -20,19 +20,41 @@ async function api(path, body) {
   return r.json();
 }
 let sdk = null;
+// connect step timings (ms), sent once with the first /api/new
+let timing = { page: Math.round(performance.now()) };
+let step = "config", stepAt = performance.now();
+const STEP = { config: "reaching Yo-chan", ready: "waiting for Discord", authorize: "Discord login", token: "checking login", authenticate: "Discord login" };
+function next(name) {
+  const now = performance.now();
+  timing[step] = Math.round(now - stepAt);
+  step = name; stepAt = now;
+}
 async function connect() {
-  const cfg = await (await fetch("/api/config")).json();
-  // outside Discord (no frame_id) only dev mode works
-  if (!new URLSearchParams(location.search).has("frame_id")) {
-    if (!cfg.dev) throw new Error("Open this from Discord.");
-    return;
-  }
-  sdk = new DiscordSDK(cfg.client_id);
-  await sdk.ready();
-  const { code } = await sdk.commands.authorize({ client_id: cfg.client_id, response_type: "code", state: "", prompt: "none", scope: ["identify"] });
-  accessToken = (await api("/api/token", { code })).access_token;
-  const auth = await sdk.commands.authenticate({ access_token: accessToken });
-  if (!auth) throw new Error("Discord login failed");
+  const t0 = performance.now();
+  const slow = setInterval(() => {
+    const s = Math.round((performance.now() - t0) / 1000);
+    if (s >= 2) msg(`Connecting… ${STEP[step]} (${s}s)`);
+  }, 1000);
+  try {
+    const cfg = await (await fetch("/api/config")).json();
+    // outside Discord (no frame_id) only dev mode works
+    if (!new URLSearchParams(location.search).has("frame_id")) {
+      if (!cfg.dev) throw new Error("Open this from Discord.");
+      next("done");
+      return;
+    }
+    sdk = new DiscordSDK(cfg.client_id);
+    next("ready");
+    await sdk.ready();
+    next("authorize");
+    const { code } = await sdk.commands.authorize({ client_id: cfg.client_id, response_type: "code", state: "", prompt: "none", scope: ["identify"] });
+    next("token");
+    accessToken = (await api("/api/token", { code })).access_token;
+    next("authenticate");
+    const auth = await sdk.commands.authenticate({ access_token: accessToken });
+    if (!auth) throw new Error("Discord login failed");
+    next("done");
+  } finally { clearInterval(slow); }
 }
 
 /* ---------- drawing (16px tiles, scaled 6x with no smoothing) ---------- */
@@ -213,7 +235,8 @@ async function newPool() {
   $("go").disabled = true;
   msg("Digging a new pool…");
   try {
-    const p = await api("/api/new", { guild_id: sdk?.guildId ?? null, channel_id: sdk?.channelId ?? null });
+    const p = await api("/api/new", { guild_id: sdk?.guildId ?? null, channel_id: sdk?.channelId ?? null, timing });
+    timing = null;
     play(p);
   } catch { msg("Couldn't reach Yo-chan. Close and open the game again."); }
 }
