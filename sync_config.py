@@ -17,6 +17,8 @@ COMMENTS = {
     ("hunger", "refuse"): "# When she's too full to eat",
     ("fun", "hours_to_empty"): "# Enrichment: games and pats fill it, it drains over time. Separate from hunger",
     ("fun", "tired_at"): "# no gains at or above this %",
+    ("fun", "pets_per_hour"): "# pats past this per hour give no enrichment",
+    ("fun", "petted"): "# When someone uses /pet",
     ("fun", "thrilled"): "# What she says at each enrichment level (/enrichment)",
     ("activity", "port"): "# local port for the Tide Pool web page; tailscale funnel makes it public",
     ("home", "auto_names"): "# Channel names she picks for auto messages when she joins a server, best first.\n# A name matches exactly or as one dash-separated word (\"bot\" matches \"bot-spam\")",

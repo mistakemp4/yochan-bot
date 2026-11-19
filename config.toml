@@ -282,6 +282,11 @@ tired_at = 95
 tidepool_per_tile = 4
 tidepool_loss = 3
 gyusays_per_round = 3
+frenzy_per_round = 3
+frenzy_per_correct = 2
+pet = 5
+# pats past this per hour give no enrichment
+pets_per_hour = 4
 # What she says at each enrichment level (/enrichment)
 thrilled = [
     "*happy flipper flaps* best day ever!!",
@@ -332,6 +337,15 @@ gloomy = [
     "*sad little gyu* …",
     "remember when we used to play? (´・ω・`)",
     "*stares out the window at the sea*",
+]
+# When someone uses /pet
+petted = [
+    "*happy gyu noises*",
+    "mrrp… more pats",
+    "*squish* hehe",
+    "gyuuu~ ♡",
+    "*leans into ur hand*",
+    "*eyes close all the way* gyu…",
 ]
 
 [activity]
