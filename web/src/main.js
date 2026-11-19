@@ -36,7 +36,8 @@ async function connect() {
     if (s >= 2) msg(`Connecting… ${STEP[step]} (${s}s)`);
   }, 1000);
   try {
-    const cfg = await (await fetch("/api/config")).json();
+    // the server puts config in the page; older cached pages still fetch it
+    const cfg = window.TIDEPOOL ?? await (await fetch("/api/config")).json();
     // outside Discord (no frame_id) only dev mode works
     if (!new URLSearchParams(location.search).has("frame_id")) {
       if (!cfg.dev) throw new Error("Open this from Discord.");

@@ -1,4 +1,5 @@
 """Web server for the Tide Pool Activity: static page + token swap + server-checked games."""
+import json
 import os
 import secrets
 import time
@@ -94,8 +95,17 @@ def make_app(on_result: ResultHook, client_id: str, client_secret: str, dev: boo
         extra = await on_result(uid, game["guild"], game["channel"], {**res, "best": game["p"]["best"]})
         return web.json_response({"won": res["won"], "order": res["order"], "tiles": res["tiles"], **extra})
 
+    # config goes in the page, saves the player a trip through Discord's proxy
+    cfg_tag = "<script>window.TIDEPOOL = %s</script>" % json.dumps(
+        {"client_id": client_id, "dev": dev}).replace("<", "\\u003c")
+
     async def index(_):
-        return web.FileResponse(DIST / "index.html")
+        page = (DIST / "index.html").read_text(encoding="utf-8")
+        # ?v= so Discord's proxy cache (4h) picks up a new build right away
+        v = int((DIST / "assets" / "app.js").stat().st_mtime)
+        page = page.replace('<script type="module" src="/assets/app.js">',
+                            f'{cfg_tag}\n<script type="module" src="/assets/app.js?v={v}">')
+        return web.Response(text=page, content_type="text/html", headers={"Cache-Control": "no-cache"})
 
     app = web.Application(client_max_size=64 * 1024)
     # tailscale serve may or may not strip /tidepool, so answer on both
