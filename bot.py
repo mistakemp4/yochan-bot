@@ -16,6 +16,7 @@ from discord import app_commands
 from discord.ext import tasks
 
 import activity
+import frenzy
 from gyusays import GyuSays
 
 ROOT = Path(__file__).parent
@@ -29,6 +30,7 @@ FUN = CONFIG["fun"]
 ACTIVITY = CONFIG["activity"]
 STATE_FILE = ROOT / "state.json"
 MEDIA_DIR = ROOT / "media"
+PETS_DIR = ROOT / "pets"  # built by pet_build.py
 MEDIA_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".webm", ".mov"}
 MAX_UPLOAD = 10 * 1024 * 1024
 
@@ -45,6 +47,7 @@ LEVELS = [("full", 80), ("content", 50), ("peckish", 25), ("hungry", 10), ("star
 HUNGRY = {"hungry", "starving"}
 # enrichment level -> lowest %
 FUN_LEVELS = [("thrilled", 80), ("happy", 50), ("okay", 25), ("bored", 10), ("gloomy", 0)]
+BORED = {"bored", "gloomy"}
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -226,6 +229,8 @@ def enrich(guild_id: int, amount: float) -> float:
     before = fun_now(b)
     gain = 0.0 if before >= FUN["tired_at"] else min(100.0 - before, max(0.0, amount))
     b["fun"], b["fun_at"] = before + gain, time.time()
+    # beg to play again only if she's still bored after
+    b["fun_begged"] = fun_level(b["fun"]) if fun_level(b["fun"]) in BORED else None
     save_state()
     return gain
 
@@ -382,6 +387,97 @@ async def gyusays(interaction: discord.Interaction):
     await view.next_round()
 
 
+# guild id -> recent pat times, for pets_per_hour
+pat_times: dict[int, list[float]] = {}
+last_pat: dict[int, Path] = {}
+
+
+def pat(guild_id: int) -> tuple[str, Path] | None:
+    gifs = sorted(PETS_DIR.glob("*.gif")) if PETS_DIR.is_dir() else []
+    if not gifs:
+        return None
+    # no same gif twice in a row
+    choices = [g for g in gifs if g != last_pat.get(guild_id)] or gifs
+    gif = last_pat[guild_id] = random.choice(choices)
+    now = time.time()
+    times = [t for t in pat_times.get(guild_id, []) if now - t < 3600] + [now]
+    pat_times[guild_id] = times
+    if len(times) > FUN["pets_per_hour"]:
+        note = "\n-# that's a lot of pats this hour, no enrichment"
+    else:
+        note = gain_line(enrich(guild_id, FUN["pet"]))
+    return random.choice(FUN["petted"]) + note, gif
+
+
+class PetAgain(discord.ui.View):
+    # persistent so old messages' buttons still work after restarts
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Pet again", emoji="✋", style=discord.ButtonStyle.primary, custom_id="pet:again")
+    async def again(self, interaction: discord.Interaction, _button: discord.ui.Button):
+        # fresh copy: after a restart every old button shares this view
+        done = PetAgain()
+        done.children[0].disabled = True
+        await interaction.response.edit_message(view=done)
+        await send_pat(interaction)
+
+
+async def send_pat(interaction: discord.Interaction):
+    got = pat(interaction.guild_id)
+    if got is None:
+        text = "no pat gifs yet… gyu"
+        if interaction.response.is_done():
+            await interaction.followup.send(text, ephemeral=True)
+        else:
+            await interaction.response.send_message(text, ephemeral=True)
+        return
+    text, gif = got
+    file = discord.File(gif, filename="pet.gif")
+    if interaction.response.is_done():
+        await interaction.followup.send(text, file=file, view=PetAgain())
+    else:
+        await interaction.response.send_message(text, file=file, view=PetAgain())
+
+
+@tree.command(description="Give Yo-chan head pats")
+@app_commands.guild_only()
+async def pet(interaction: discord.Interaction):
+    await send_pat(interaction)
+
+
+# channel id -> running Fish Frenzy
+frenzies: dict[int, frenzy.Frenzy] = {}
+
+
+@tree.command(description="Play Fish Frenzy: first to react with the right emoji wins")
+@app_commands.guild_only()
+async def fishfrenzy(interaction: discord.Interaction):
+    channel_id, guild_id = interaction.channel_id, interaction.guild_id
+    if channel_id in frenzies:
+        await interaction.response.send_message("there's already a frenzy going here~", ephemeral=True)
+        return
+    riddles = frenzy.load()
+    if not riddles:
+        await interaction.response.send_message("i don't have any riddles… gyu", ephemeral=True)
+        return
+
+    def on_end(played: int, rights: int) -> str:
+        return gain_line(enrich(guild_id, played * FUN["frenzy_per_round"] + rights * FUN["frenzy_per_correct"]))
+
+    game = frenzies[channel_id] = frenzy.Frenzy(interaction.channel, riddles, on_end)
+    try:
+        await interaction.response.send_message(
+            f"fish frenzy!! i describe something, first one to **react** with it wins. "
+            f"2 points before my hint, 1 after. {len(game.riddles)} rounds go"
+        )
+        await game.run()
+    except discord.HTTPException as e:
+        print(f"fish frenzy stopped: {e}", flush=True)
+    finally:
+        frenzies.pop(channel_id, None)
+
+
 class TidePlay(discord.ui.View):
     # persistent: the Play button keeps working after restarts
     def __init__(self):
@@ -436,17 +532,23 @@ async def tide_result(user_id: int, guild_id: int | None, channel_id: int | None
 
 @tasks.loop(minutes=HUNGER["beg_check_minutes"])
 async def beg():
-    for guild_id, b in state.items():
+    for guild_id, b in list(state.items()):
         lvl = level(fullness(b))
-        if lvl not in HUNGRY or b["begged"] == lvl:
+        fun_lvl = fun_level(fun_now(fun_state(int(guild_id))))
+        # one beg per check, food first
+        if lvl in HUNGRY and b["begged"] != lvl:
+            key, line = "begged", random.choice(HUNGER[lvl])
+        elif fun_lvl in BORED and b.get("fun_begged") != fun_lvl:
+            key, lvl, line = "fun_begged", fun_lvl, random.choice(FUN[fun_lvl])
+        else:
             continue
         channel = home_channel(int(guild_id))
         if channel is None:
             continue
-        b["begged"] = lvl
+        b[key] = lvl
         save_state()
         try:
-            await channel.send(random.choice(HUNGER[lvl]))
+            await channel.send(line)
         except discord.HTTPException:
             pass
 
@@ -462,6 +564,7 @@ async def on_ready():
             await tree.sync(guild=guild)
         synced = True
         client.add_view(TidePlay())
+        client.add_view(PetAgain())
         web_runner = await activity.start(tide_result, ACTIVITY["port"])
     for guild in client.guilds:
         found = auto_home(guild)
@@ -514,6 +617,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if payload.guild_id is None or payload.user_id == client.user.id:
         return
     if payload.member and payload.member.bot:
+        return
+    game = frenzies.get(payload.channel_id)
+    # answers on a round message aren't food or gyu letters
+    if game and game.react(payload.message_id, payload.user_id, str(payload.emoji)):
         return
     if payload.message_author_id == client.user.id and is_food(payload.emoji):
         line = feed(payload.guild_id, 1)
